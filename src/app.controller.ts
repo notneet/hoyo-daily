@@ -46,8 +46,9 @@ export class AppController implements OnApplicationBootstrap {
       await this.waitForSec(3);
       await this.challengePopup(page);
       await page.click(xpathDailyContent);
-      await this.waitForSec(4);
+      await this.waitForSec(8);
       const dailyCheckInPage = this.playwrightService.browserContext.pages()[1];
+      this.logger.verbose(`Process page ${dailyCheckInPage.url()}`);
       await this.closeDownload(dailyCheckInPage);
 
       const xpathActiveWrapper = this.appService.makeXpath(

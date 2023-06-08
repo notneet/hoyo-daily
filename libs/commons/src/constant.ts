@@ -24,7 +24,8 @@ export enum HoyoXpath {
   M_CHECKIN_BUTTON = `./div[@class='game-tools-cell'][2]`,
   M_CHECKIN_LOAD_MORE = `//div[@class='components-m-assets-__index_---more-wrapper---L23p0a']`,
   M_SIGN_IN_CONTAINER = `//div[@class='components-m-assets-__index_---sign-list---1seWJQ']`,
-  M_SIGN_IN_NOW = `./div[1]`,
+  M_SIGN_IN_LIST_NOW = `./div`,
+  M_SIGN_IN_NOW = `.//div[@class='components-m-assets-__index_---actived-day---Es_5Yq']`,
 
   // ============================= //
   HOME_DIALOG_BUTTON = `//button[text() = 'Skip']`,

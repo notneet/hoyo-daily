@@ -5,6 +5,8 @@ import { ElementHandle, Page } from 'playwright';
 import { HoyoXpath } from '@libs/commons/constant';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
+export type TagElement = ElementHandle<SVGElement | HTMLElement>;
+
 @Controller()
 export class AppController implements OnApplicationBootstrap {
   private readonly logger = new Logger(AppController.name);
@@ -30,7 +32,8 @@ export class AppController implements OnApplicationBootstrap {
 
   @Cron(CronExpression.EVERY_DAY_AT_5AM)
   async init() {
-    let checkInItem: ElementHandle<SVGElement | HTMLElement>[];
+    let checkInItems: TagElement[];
+    let checkInItem: TagElement;
     const page: Page = await this.playwrightService.createPage();
     const xpathChooseGame = this.appService.makeXpath(
       HoyoXpath.M_SELECT_GAME_CONTAINER,
@@ -43,7 +46,11 @@ export class AppController implements OnApplicationBootstrap {
     const xpathLoadMore = this.appService.makeXpath(
       HoyoXpath.M_CHECKIN_LOAD_MORE,
     );
-    const xpathCheckIn = this.appService.makeXpath(
+    const xpathCheckInList = this.appService.makeXpath(
+      HoyoXpath.M_SIGN_IN_CONTAINER,
+      HoyoXpath.M_SIGN_IN_LIST_NOW,
+    );
+    const xpathCheckItem = this.appService.makeXpath(
       HoyoXpath.M_SIGN_IN_CONTAINER,
       HoyoXpath.M_SIGN_IN_NOW,
     );
@@ -69,8 +76,19 @@ export class AppController implements OnApplicationBootstrap {
       this.logger.verbose(`Process page ${dailyCheckInPage.url()}`);
       // await dailyCheckInPage.click(xpathLoadMore);
       await this.waitForSec(3);
-      checkInItem = await dailyCheckInPage.$$(xpathCheckIn);
-      if (checkInItem.length > 0) {
+
+      checkInItems = await dailyCheckInPage.$$(xpathCheckInList);
+      checkInItem = await dailyCheckInPage.$(xpathCheckItem);
+      const currentCheckInIndex = this.getCurrentCheckInComponent(
+        checkInItems,
+        checkInItem,
+      );
+
+      if (currentCheckInIndex) {
+        const xpathCheckIn = this.appService.makeXpath(
+          HoyoXpath.M_SIGN_IN_CONTAINER,
+          `./div[${currentCheckInIndex}]`,
+        );
         this.logger.verbose(`new check in found...`);
         await dailyCheckInPage.click(xpathCheckIn);
         await this.waitForSec(8);
@@ -132,6 +150,15 @@ export class AppController implements OnApplicationBootstrap {
   //     await page.click(xpathCloseButton);
   //   }
   // }
+
+  async getCurrentCheckInComponent(
+    listCheckIn: TagElement[],
+    searchAble: TagElement,
+  ) {
+    if (listCheckIn.length < 1) return null;
+
+    return listCheckIn.findIndex((item) => item === searchAble);
+  }
 
   async killPages(pages: Page[]) {
     do {

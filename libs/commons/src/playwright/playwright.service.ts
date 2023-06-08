@@ -94,6 +94,7 @@ export class PlaywrightService implements OnApplicationBootstrap, OnModuleInit {
     this.browserState = 'creating';
     const launchOptions: LaunchOptions = {
       headless: this.config.get<string>(EnvKey.HEADLESS, 'true') === 'true',
+      args: ['--start-fullscreen'],
     };
     const proxyServer = this.config.get(EnvKey.PROXY_SERVER);
     const proxyUser = this.config.get(EnvKey.PROXY_USER);
@@ -113,6 +114,11 @@ export class PlaywrightService implements OnApplicationBootstrap, OnModuleInit {
     await this.createBrowserContext({
       launchOptions,
       cookiesPath,
+      context: {
+        viewport: { width: 512, height: 850 },
+        userAgent:
+          'Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
+      },
     });
 
     if (test && this.browserState === 'created') {

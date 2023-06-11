@@ -73,31 +73,36 @@ export class AppController implements OnApplicationBootstrap {
       await page.click(xpathDailyPage);
       await this.waitForSec(8);
       const dailyCheckInPage = this.playwrightService.browserContext.pages()[1];
-      this.logger.verbose(`Process page ${dailyCheckInPage.url()}`);
-      // await dailyCheckInPage.click(xpathLoadMore);
-      await this.waitForSec(3);
+      this.logger.verbose(`Process page ${await dailyCheckInPage.title()}`);
+      await dailyCheckInPage.click(xpathLoadMore);
+      await this.waitForSec(12);
 
       checkInItems = await dailyCheckInPage.$$(xpathCheckInList);
       checkInItem = await dailyCheckInPage.$(xpathCheckItem);
-      const currentCheckInIndex = this.getCurrentCheckInComponent(
+      const currentCheckInIndex = await this.getCurrentCheckInComponent(
         checkInItems,
-        checkInItem,
+        await checkInItem?.getAttribute('class'),
       );
 
-      if (currentCheckInIndex) {
+      if (currentCheckInIndex !== null) {
         const xpathCheckIn = this.appService.makeXpath(
           HoyoXpath.M_SIGN_IN_CONTAINER,
-          `./div[${currentCheckInIndex}]`,
+          `./div[${currentCheckInIndex + 1}]`,
         );
         this.logger.verbose(`new check in found...`);
+        console.log(xpathCheckIn);
         await dailyCheckInPage.click(xpathCheckIn);
-        await this.waitForSec(8);
+        await this.waitForSec(12);
         this.logger.verbose(`Checked In`);
+
+        const nextItem = await dailyCheckInPage.$(xpathNextItem);
+        if (nextItem) {
+          this.logger.verbose(
+            `Next Item: ${await dailyCheckInPage.textContent(xpathNextItem)}`,
+          );
+        }
       }
 
-      this.logger.verbose(
-        `Next Item: ${await dailyCheckInPage.textContent(xpathNextItem)}`,
-      );
       await this.killPages([page, dailyCheckInPage]);
       this.logger.verbose(`Done Check-In. Kill pages`);
       return;
@@ -109,55 +114,20 @@ export class AppController implements OnApplicationBootstrap {
     }
   }
 
-  // async challengePopup(page: Page) {
-  //   let overlay: ElementHandle<SVGElement | HTMLElement>[];
-  //   let dialog: ElementHandle<SVGElement | HTMLElement>[];
-
-  //   const xpathOverlay = this.appService.makeXpath(HoyoXpath.HOME_OVERLAY);
-  //   const xpathDialog = this.appService.makeXpath(HoyoXpath.HOME_DIALOG);
-  //   const xpathButtonSkipDialog = this.appService.makeXpath(
-  //     HoyoXpath.HOME_DIALOG_BUTTON,
-  //   );
-
-  //   do {
-  //     await this.waitForSec(3);
-  //     overlay = await page.$$(xpathOverlay);
-  //     if (overlay.length) {
-  //       this.logger.debug(`overlay detected`);
-  //       await page.click(xpathOverlay);
-  //     }
-
-  //     await this.waitForSec(3);
-  //     dialog = await page.$$(xpathDialog);
-
-  //     if (dialog.length) {
-  //       this.logger.debug(`dialog detected`);
-  //       await page.click(xpathButtonSkipDialog);
-  //     }
-  //   } while (overlay.length || dialog.length);
-  // }
-
-  // async closeDownload(page: Page) {
-  //   this.logger.verbose(`wait download popup`);
-  //   await this.waitForSec(8);
-  //   const xpathCloseButton = this.appService.makeXpath(
-  //     HoyoXpath.CLOSE_DOWNLOAD_BUTTON,
-  //   );
-  //   const button = await page.$$(xpathCloseButton);
-
-  //   if (button.length) {
-  //     this.logger.debug(`close popup downloads mobile app`);
-  //     await page.click(xpathCloseButton);
-  //   }
-  // }
-
   async getCurrentCheckInComponent(
     listCheckIn: TagElement[],
-    searchAble: TagElement,
+    searchAbleClassName: string,
   ) {
-    if (listCheckIn.length < 1) return null;
+    if (listCheckIn?.length < 1 || !searchAbleClassName) return null;
 
-    return listCheckIn.findIndex((item) => item === searchAble);
+    for (let i = 0; i < listCheckIn.length; i++) {
+      const currentClass = await listCheckIn[i].getAttribute('class');
+      if (currentClass === HoyoXpath.M_SIGN_IN_NOW_CLASS_NAME) {
+        return i;
+      }
+    }
+
+    return null;
   }
 
   async killPages(pages: Page[]) {

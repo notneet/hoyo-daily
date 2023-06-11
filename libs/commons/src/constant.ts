@@ -25,7 +25,8 @@ export enum HoyoXpath {
   M_CHECKIN_LOAD_MORE = `//div[@class='components-m-assets-__index_---more-wrapper---L23p0a']`,
   M_SIGN_IN_CONTAINER = `//div[@class='components-m-assets-__index_---sign-list---1seWJQ']`,
   M_SIGN_IN_LIST_NOW = `./div`,
-  M_SIGN_IN_NOW = `.//div[@class='components-m-assets-__index_---actived-day---Es_5Yq']`,
+  M_SIGN_IN_NOW = `.//div[@class='components-m-assets-__index_---sign-item---2jh3xA components-m-assets-__index_---sign-wrapper---3WcYRI']`,
+  M_SIGN_IN_NOW_CLASS_NAME = `components-m-assets-__index_---sign-item---2jh3xA components-m-assets-__index_---sign-wrapper---3WcYRI`,
 
   // ============================= //
   HOME_DIALOG_BUTTON = `//button[text() = 'Skip']`,

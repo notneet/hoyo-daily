@@ -7,37 +7,32 @@ export enum EnvKey {
   PROXY_USER = 'PROXY_USER',
   PROXY_PASS = 'PROXY_PASS',
   COOKIES_PATH = 'COOKIES_PATH',
+  NODE_ENV = 'NODE_ENV',
+  WAIT_TIME_IN_SEC = 'WAIT_TIME_IN_SEC',
 }
 
-export enum HoyoXpath {
-  BASE_URL = 'https://www.hoyolab.com',
-  HOME_OVERLAY = `//div[@id='driver-page-overlay']`,
-  HOME_DIALOG = `//div[@class='mhy-dialog__body']`,
-  /**
-   * 1. open homepage
-   * 2. select game
-   * 3. select check-in button
-   */
-  M_SELECT_GAME_CONTAINER = `//div[@class='game-select-game']`,
-  M_SELECT_GENSHIN = `./div[1]`,
-  M_GAME_TOOL_BOX_CONTAINER = `//div[@class='mhy-swiper-slide swiper-slide swiper-slide-active']/./div`,
-  M_CHECKIN_BUTTON = `./div[@class='game-tools-cell'][2]`,
-  M_CHECKIN_LOAD_MORE = `//div[@class='components-m-assets-__index_---more-wrapper---L23p0a']`,
-  M_SIGN_IN_CONTAINER = `//div[@class='components-m-assets-__index_---sign-list---1seWJQ']`,
-  M_SIGN_IN_LIST_NOW = `./div`,
-  M_SIGN_IN_NOW = `.//div[@class='components-m-assets-__index_---sign-item---2jh3xA components-m-assets-__index_---sign-wrapper---3WcYRI']`,
-  M_SIGN_IN_NOW_CLASS_NAME = `components-m-assets-__index_---sign-item---2jh3xA components-m-assets-__index_---sign-wrapper---3WcYRI`,
-
-  // ============================= //
-  HOME_DIALOG_BUTTON = `//button[text() = 'Skip']`,
-  CLOSE_DOWNLOAD_BUTTON = `//span[@class='components-home-assets-__sign-guide_---guide-close---2VvmzE']`,
-  TOOLS_CONTAINER = `//div[@class='mhy-side-section mhy-tools-container']`,
-  TITLE_CONTAINER = `.//div[@class='text']`,
-  TOOLS_LIST_CONTAINER = `.//div[contains(@class,'tools-list')][1]`,
-  DAILY_CHECKIN_BUTTON = `./div[2]`,
-  SIGN_IN_CONTAINER = `//div[@class='components-home-assets-__sign-content_---sign-list---1E-cUZ']`,
-  SIGN_IN_COTENT_LIST = `./div[contains(@class,'components-home-assets-__sign-content_---sign-item---k8WFIr')]`,
-  SIGN_IN_NOW = `.//div[@class='components-home-assets-__sign-content_---actived-day---2GukeS']`,
-  DAILY_DIALOG_BUTTON = `//div[@class='components-common-common-dialog-__index_---dialog-close---1Yc84V']`,
-  DAILY_NEXT_ITEM_INFO = `//div[@class='components-common-common-dialog-__index_---next-info---3oTiNW']`,
+export enum HoyoXpathKey {
+  BASE_URL = 'BASE_URL',
+  HOME_OVERLAY = 'HOME_OVERLAY',
+  HOME_DIALOG = 'HOME_DIALOG',
+  M_SELECT_GAME_CONTAINER = 'M_SELECT_GAME_CONTAINER',
+  M_SELECT_GENSHIN = 'M_SELECT_GENSHIN',
+  M_GAME_TOOL_BOX_CONTAINER = 'M_GAME_TOOL_BOX_CONTAINER',
+  M_CHECKIN_BUTTON = 'M_CHECKIN_BUTTON',
+  M_CHECKIN_LOAD_MORE = 'M_CHECKIN_LOAD_MORE',
+  M_SIGN_IN_CONTAINER = 'M_SIGN_IN_CONTAINER',
+  M_SIGN_IN_LIST_NOW = 'M_SIGN_IN_LIST_NOW',
+  M_SIGN_IN_NOW = 'M_SIGN_IN_NOW',
+  M_SIGN_IN_NOW_CLASS_NAME = 'M_SIGN_IN_NOW_CLASS_NAME',
+  HOME_DIALOG_BUTTON = 'HOME_DIALOG_BUTTON',
+  CLOSE_DOWNLOAD_BUTTON = 'CLOSE_DOWNLOAD_BUTTON',
+  TOOLS_CONTAINER = 'TOOLS_CONTAINER',
+  TITLE_CONTAINER = 'TITLE_CONTAINER',
+  TOOLS_LIST_CONTAINER = 'TOOLS_LIST_CONTAINER',
+  DAILY_CHECKIN_BUTTON = 'DAILY_CHECKIN_BUTTON',
+  SIGN_IN_CONTAINER = 'SIGN_IN_CONTAINER',
+  SIGN_IN_COTENT_LIST = 'SIGN_IN_COTENT_LIST',
+  SIGN_IN_NOW = 'SIGN_IN_NOW',
+  DAILY_DIALOG_BUTTON = 'DAILY_DIALOG_BUTTON',
+  DAILY_NEXT_ITEM_INFO = 'DAILY_NEXT_ITEM_INFO',
 }

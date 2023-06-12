@@ -2,28 +2,24 @@ import { Controller, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { AppService } from './app.service';
 import { PlaywrightService } from '@libs/commons/playwright/playwright.service';
 import { ElementHandle, Page } from 'playwright';
-import { HoyoXpath } from '@libs/commons/constant';
+import { HoyoXpathKey } from '@libs/commons/constant';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { JsonXpathParserService } from '@libs/commons/json-xpath-parser/json-xpath-parser.service';
 
 export type TagElement = ElementHandle<SVGElement | HTMLElement>;
 
 @Controller()
 export class AppController implements OnApplicationBootstrap {
   private readonly logger = new Logger(AppController.name);
-  private readonly hoyoIndexPage = `${HoyoXpath.BASE_URL}/home`;
-  private readonly waitAfterConnectedInSec = 3;
 
   constructor(
     private readonly appService: AppService,
     private readonly playwrightService: PlaywrightService,
+    private readonly xpathParserService: JsonXpathParserService,
   ) {}
 
   private get timeout() {
     return 30 * 1000;
-  }
-
-  private async waitForSec(sec: number = this.waitAfterConnectedInSec) {
-    return await new Promise((res) => setTimeout(res, sec * 1000));
   }
 
   async onApplicationBootstrap() {
@@ -32,68 +28,35 @@ export class AppController implements OnApplicationBootstrap {
 
   @Cron(CronExpression.EVERY_DAY_AT_5AM)
   async init() {
-    let checkInItems: TagElement[];
-    let checkInItem: TagElement;
-    const page: Page = await this.playwrightService.createPage();
-    const xpathChooseGame = this.appService.makeXpath(
-      HoyoXpath.M_SELECT_GAME_CONTAINER,
-      HoyoXpath.M_SELECT_GENSHIN,
-    );
-    const xpathDailyPage = this.appService.makeXpath(
-      HoyoXpath.M_GAME_TOOL_BOX_CONTAINER,
-      HoyoXpath.M_CHECKIN_BUTTON,
-    );
-    const xpathLoadMore = this.appService.makeXpath(
-      HoyoXpath.M_CHECKIN_LOAD_MORE,
-    );
-    const xpathCheckInList = this.appService.makeXpath(
-      HoyoXpath.M_SIGN_IN_CONTAINER,
-      HoyoXpath.M_SIGN_IN_LIST_NOW,
-    );
-    const xpathCheckItem = this.appService.makeXpath(
-      HoyoXpath.M_SIGN_IN_CONTAINER,
-      HoyoXpath.M_SIGN_IN_NOW,
-    );
+    await this.xpathParserService.loadGenshinXpath();
+
     const xpathNextItem = this.appService.makeXpath(
-      HoyoXpath.DAILY_NEXT_ITEM_INFO,
+      this.xpathParserService.getHoyoXpath(HoyoXpathKey.DAILY_NEXT_ITEM_INFO),
     );
-    const xpathCloseDialogDaily = this.appService.makeXpath(
-      HoyoXpath.DAILY_DIALOG_BUTTON,
-    );
-    this.logger.verbose(`Opening web ${this.hoyoIndexPage}`);
+    const page: Page = await this.playwrightService.createPage();
 
     try {
-      await page.goto(this.hoyoIndexPage, {
-        waitUntil: 'domcontentloaded',
-        timeout: this.timeout,
-      });
-      await this.waitForSec(3);
-      await page.click(xpathChooseGame);
-      await this.waitForSec(6);
-      await page.click(xpathDailyPage);
-      await this.waitForSec(8);
-      const dailyCheckInPage = this.playwrightService.browserContext.pages()[1];
-      this.logger.verbose(`Process page ${await dailyCheckInPage.title()}`);
-      await dailyCheckInPage.click(xpathLoadMore);
-      await this.waitForSec(12);
-
-      checkInItems = await dailyCheckInPage.$$(xpathCheckInList);
-      checkInItem = await dailyCheckInPage.$(xpathCheckItem);
-      const currentCheckInIndex = await this.getCurrentCheckInComponent(
-        checkInItems,
-        await checkInItem?.getAttribute('class'),
+      const genshinHomePage = await this.openGenshinHomePage(page);
+      const dailyCheckInPage = await this.navigateToDailyCheckInPage(
+        genshinHomePage,
+      );
+      const currentCheckInIndex = await this.getCurrentCheckIn(
+        dailyCheckInPage,
       );
 
       if (currentCheckInIndex !== null) {
         const xpathCheckIn = this.appService.makeXpath(
-          HoyoXpath.M_SIGN_IN_CONTAINER,
+          this.xpathParserService.getHoyoXpath(
+            HoyoXpathKey.M_SIGN_IN_CONTAINER,
+          ),
           `./div[${currentCheckInIndex + 1}]`,
         );
+
         this.logger.verbose(`new check in found...`);
-        console.log(xpathCheckIn);
         await dailyCheckInPage.click(xpathCheckIn);
-        await this.waitForSec(12);
         this.logger.verbose(`Checked In`);
+
+        await this.appService.waitForSec(`Next Item`);
 
         const nextItem = await dailyCheckInPage.$(xpathNextItem);
         if (nextItem) {
@@ -103,18 +66,92 @@ export class AppController implements OnApplicationBootstrap {
         }
       }
 
-      await this.killPages([page, dailyCheckInPage]);
+      await this.appService.killPages([page, dailyCheckInPage]);
       this.logger.verbose(`Done Check-In. Kill pages`);
+
       return;
     } catch (error) {
       if (page && !page.isClosed()) {
-        page?.close();
+        await this.appService.killPages([page]);
       }
       console.error(error);
     }
   }
 
-  async getCurrentCheckInComponent(
+  private async openGenshinHomePage(page: Page) {
+    const hoyoIndexPage = `${this.xpathParserService.getHoyoXpath(
+      HoyoXpathKey.BASE_URL,
+    )}/home`;
+    try {
+      this.logger.verbose(`Open ${hoyoIndexPage}`);
+      await page.goto(hoyoIndexPage, {
+        waitUntil: 'domcontentloaded',
+        timeout: this.timeout,
+      });
+      await this.appService.waitForSec('Homepage');
+
+      return page;
+    } catch (error) {
+      if (page && !page.isClosed()) {
+        await this.appService.killPages([page]);
+      }
+      console.error(error);
+    }
+  }
+
+  private async navigateToDailyCheckInPage(page: Page) {
+    const xpathChooseGame = this.appService.makeXpath(
+      this.xpathParserService.getHoyoXpath(
+        HoyoXpathKey.M_SELECT_GAME_CONTAINER,
+      ),
+      this.xpathParserService.getHoyoXpath(HoyoXpathKey.M_SELECT_GENSHIN),
+    );
+    const xpathDailyPage = this.appService.makeXpath(
+      this.xpathParserService.getHoyoXpath(
+        HoyoXpathKey.M_GAME_TOOL_BOX_CONTAINER,
+      ),
+      this.xpathParserService.getHoyoXpath(HoyoXpathKey.M_CHECKIN_BUTTON),
+    );
+    const xpathLoadMore = this.appService.makeXpath(
+      this.xpathParserService.getHoyoXpath(HoyoXpathKey.M_CHECKIN_LOAD_MORE),
+    );
+
+    await page.click(xpathChooseGame);
+    await this.appService.waitForSec('Choose Game');
+
+    await page.click(xpathDailyPage);
+    await this.appService.waitForSec('Daily Check-In');
+
+    const dailyCheckInPage = this.playwrightService.browserContext.pages()[1];
+    this.logger.verbose(`Process page ${await dailyCheckInPage.title()}`);
+
+    await dailyCheckInPage.click(xpathLoadMore);
+    await this.appService.waitForSec('Load More');
+
+    return dailyCheckInPage;
+  }
+
+  private async getCurrentCheckIn(dailyCheckInPage: Page) {
+    const xpathCheckInList = this.appService.makeXpath(
+      this.xpathParserService.getHoyoXpath(HoyoXpathKey.M_SIGN_IN_CONTAINER),
+      this.xpathParserService.getHoyoXpath(HoyoXpathKey.M_SIGN_IN_LIST_NOW),
+    );
+    const xpathCheckItem = this.appService.makeXpath(
+      this.xpathParserService.getHoyoXpath(HoyoXpathKey.M_SIGN_IN_CONTAINER),
+      this.xpathParserService.getHoyoXpath(HoyoXpathKey.M_SIGN_IN_NOW),
+    );
+
+    const checkInItems = await dailyCheckInPage.$$(xpathCheckInList);
+    const checkInItem = await dailyCheckInPage.$(xpathCheckItem);
+    const currentCheckInIndex = await this.getCurrentCheckInComponent(
+      checkInItems,
+      await checkInItem?.getAttribute('class'),
+    );
+
+    return currentCheckInIndex;
+  }
+
+  private async getCurrentCheckInComponent(
     listCheckIn: TagElement[],
     searchAbleClassName: string,
   ) {
@@ -122,27 +159,16 @@ export class AppController implements OnApplicationBootstrap {
 
     for (let i = 0; i < listCheckIn.length; i++) {
       const currentClass = await listCheckIn[i].getAttribute('class');
-      if (currentClass === HoyoXpath.M_SIGN_IN_NOW_CLASS_NAME) {
+      if (
+        currentClass ===
+        this.xpathParserService.getHoyoXpath(
+          HoyoXpathKey.M_SIGN_IN_NOW_CLASS_NAME,
+        )
+      ) {
         return i;
       }
     }
 
     return null;
-  }
-
-  async killPages(pages: Page[]) {
-    do {
-      try {
-        pages.map(async (page) => {
-          if (page && !page.isClosed()) {
-            page.close().catch(() => {
-              this.logger.error(`can't close page properly ${page.url()}`);
-            });
-          }
-        });
-      } catch (error) {
-        console.error(error);
-      }
-    } while (pages.length < 1);
   }
 }

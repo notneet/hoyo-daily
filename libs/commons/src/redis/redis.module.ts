@@ -16,7 +16,7 @@ const redisProvider = {
 };
 
 @Module({
-  imports: [ConfigModule.forRoot({ envFilePath: 'env.example' })],
+  imports: [ConfigModule.forRoot()],
   providers: [redisProvider],
   exports: [redisProvider],
 })

@@ -1,15 +1,11 @@
-import { Module } from '@nestjs/common';
 import { RedisModule } from '@libs/commons/redis/redis.module';
-import { PlaywrightService } from './playwright.service';
+import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { PlaywrightService } from './playwright.service';
 
 @Module({
-  imports: [
-    RedisModule,
-    ConfigModule.forRoot({ envFilePath: 'env.example' }),
-    ScheduleModule.forRoot(),
-  ],
+  imports: [RedisModule, ConfigModule.forRoot(), ScheduleModule.forRoot()],
   providers: [PlaywrightService],
   exports: [PlaywrightService],
 })

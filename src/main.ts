@@ -3,23 +3,24 @@
  * Copyright (C) 2023 Hanivan Rizky Sobari <hanivan20@gmail.com>
  */
 
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EnvKey } from '@libs/commons/constant';
 import { LogLevel } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   const configModule = await NestFactory.createApplicationContext(
-    ConfigModule.forRoot({ envFilePath: ['.env', '.env.prod', '.env.dev'] }),
+    ConfigModule.forRoot(),
   );
   const configService = configModule.get(ConfigService);
-  const isDev =
-    configService.get<string>(EnvKey.NODE_ENV, 'production') === 'development';
-  const logger: LogLevel[] = isDev
-    ? ['log', 'debug', 'error']
-    : ['log', 'verbose', 'error'];
-  console.log(`App Env: ${isDev}`);
+  const appEnv = configService.get<string>(EnvKey.NODE_ENV, 'production');
+  configModule.close();
+  const logger: LogLevel[] =
+    appEnv === 'development'
+      ? ['log', 'debug', 'error']
+      : ['log', 'verbose', 'error'];
+  console.log(`App env: ${appEnv}, logger: ${logger}`);
 
   const app = await NestFactory.createMicroservice(AppModule, { logger });
   await app.listen();

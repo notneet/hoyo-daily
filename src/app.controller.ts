@@ -1,10 +1,10 @@
-import { Controller, Logger, OnApplicationBootstrap } from '@nestjs/common';
-import { AppService } from './app.service';
-import { PlaywrightService } from '@libs/commons/playwright/playwright.service';
-import { ElementHandle, Page } from 'playwright';
 import { HoyoXpathKey } from '@libs/commons/constant';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { JsonXpathParserService } from '@libs/commons/json-xpath-parser/json-xpath-parser.service';
+import { PlaywrightService } from '@libs/commons/playwright/playwright.service';
+import { Controller, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { ElementHandle, Page } from 'playwright';
+import { AppService } from './app.service';
 
 export type TagElement = ElementHandle<SVGElement | HTMLElement>;
 
@@ -81,7 +81,7 @@ export class AppController implements OnApplicationBootstrap {
   private async openGenshinHomePage(page: Page) {
     const hoyoIndexPage = `${this.xpathParserService.getHoyoXpath(
       HoyoXpathKey.BASE_URL,
-    )}/home`;
+    )}`;
     try {
       this.logger.verbose(`Open ${hoyoIndexPage}`);
       await page.goto(hoyoIndexPage, {
@@ -106,6 +106,10 @@ export class AppController implements OnApplicationBootstrap {
       ),
       this.xpathParserService.getHoyoXpath(HoyoXpathKey.M_SELECT_GENSHIN),
     );
+    const navigateTabHoyoGuide = this.appService.makeXpath(
+      this.xpathParserService.getHoyoXpath(HoyoXpathKey.M_SELECT_TAB_CONTAINER),
+      this.xpathParserService.getHoyoXpath(HoyoXpathKey.M_SELECT_TAB_GUIDE),
+    );
     const xpathDailyPage = this.appService.makeXpath(
       this.xpathParserService.getHoyoXpath(
         HoyoXpathKey.M_GAME_TOOL_BOX_CONTAINER,
@@ -118,6 +122,9 @@ export class AppController implements OnApplicationBootstrap {
 
     await page.click(xpathChooseGame);
     await this.appService.waitForSec('Choose Game');
+
+    await page.click(navigateTabHoyoGuide);
+    await this.appService.waitForSec('Navigate Tab Guide');
 
     await page.click(xpathDailyPage);
     await this.appService.waitForSec('Daily Check-In');
